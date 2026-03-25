@@ -340,6 +340,8 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
     <button class="btn-new-deck" onclick="openNewDeck()">+ New Deck</button>
     <button class="btn-settings" onclick="openSettings()">&#9881; Settings</button>
     <button class="btn-settings" style="margin-top:7px" onclick="openImport()">&#8679; Import from Markdown</button>
+    <button class="btn-settings" style="margin-top:7px" onclick="exportBackup()">&#8675; Export Backup</button>
+    <button class="btn-settings" style="margin-top:7px" onclick="openRestoreBackup()">&#8679; Restore Backup</button>
   </div>
   <div class="decks-label">Your Decks</div>
   <div id="deck-list"></div>
@@ -479,6 +481,44 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn-primary btn-primary-red" id="import-go-btn" onclick="runImport()" style="display:none">Import All Verses</button>
       <button class="btn-secondary" onclick="closeImport()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESTORE BACKUP MODAL -->
+<div class="overlay" id="restore-overlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">Restore Backup</div>
+    <div class="modal-sub">Upload a previously exported <code style="font-family:'DM Mono',monospace;font-size:12px;background:var(--parchment-dark);padding:1px 5px;border-radius:2px">.json</code> backup file.</div>
+    <div class="modal-field">
+      <label>Restore Mode</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-family:'Crimson Pro',serif;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink)">
+          <input type="radio" name="restore-mode" value="merge" checked style="margin-top:3px;accent-color:var(--gold);width:auto">
+          <span><strong>Merge</strong> — add imported decks alongside existing ones</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-family:'Crimson Pro',serif;font-size:15px;text-transform:none;letter-spacing:0;color:var(--ink)">
+          <input type="radio" name="restore-mode" value="replace" style="margin-top:3px;accent-color:var(--gold);width:auto">
+          <span><strong>Replace</strong> — overwrite everything with the backup</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Backup File</label>
+      <div class="import-dropzone" id="restore-dropzone">
+        <input type="file" accept=".json" id="restore-file-input" onchange="handleRestoreFile(event)">
+        <div class="import-drop-icon">&#8679;</div>
+        <div class="import-drop-label">Drop your .json backup file here</div>
+        <div class="import-drop-hint">.json files only</div>
+      </div>
+    </div>
+    <div id="restore-preview" style="display:none;margin-top:4px">
+      <div class="import-preview-header" id="restore-preview-label"></div>
+    </div>
+    <div class="status-msg" id="restore-status"></div>
+    <div class="modal-actions">
+      <button class="btn-primary btn-primary-red" id="restore-go-btn" onclick="runRestore()" style="display:none">Restore Now</button>
+      <button class="btn-secondary" onclick="closeRestoreBackup()">Cancel</button>
     </div>
   </div>
 </div>
@@ -646,6 +686,30 @@ function closeNewDeck() {
   document.getElementById('newdeck-overlay').classList.remove('open');
   document.getElementById('deck-name-input').value = '';
 }
+function deleteDeck(id) {
+  const deck = state.decks.find(d => d.id === id);
+  if (!deck) return;
+  if (!confirm(`Delete "${deck.name}" and all ${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''} in it? This cannot be undone.`)) return;
+  state.decks = state.decks.filter(d => d.id !== id);
+  if (state.activeDeckId === id) {
+    state.activeDeckId = state.decks.length ? state.decks[state.decks.length - 1].id : null;
+    state.cardIndex = 0;
+  }
+  save();
+  renderSidebar();
+  if (state.activeDeckId) {
+    selectDeck(state.activeDeckId);
+  } else {
+    document.getElementById('add-form').style.display = 'none';
+    document.getElementById('mode-tabs').style.display = 'none';
+    document.getElementById('focus-btn').style.display = 'none';
+    document.getElementById('verse-chips').innerHTML = '';
+    document.getElementById('deck-title-display').innerHTML =
+      'Scripture Memory<span id="deck-sub">Select or create a deck</span>';
+    showNoDeck();
+  }
+}
+
 function createDeck() {
   const name = document.getElementById('deck-name-input').value.trim();
   if (!name) return;
@@ -677,8 +741,16 @@ function renderSidebar() {
   state.decks.slice().reverse().forEach(deck => {
     const el = document.createElement('div');
     el.className = 'deck-item' + (deck.id === state.activeDeckId ? ' active' : '');
-    el.innerHTML = `<div class="deck-name">${esc(deck.name)}</div>
-      <div class="deck-meta">${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}</div>`;
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div style="min-width:0">
+          <div class="deck-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(deck.name)}</div>
+          <div class="deck-meta">${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}</div>
+        </div>
+        <button onclick="event.stopPropagation();deleteDeck('${esc(deck.id)}')" title="Delete deck"
+          style="background:none;border:none;color:#5a4a3a;cursor:pointer;font-size:15px;padding:2px 4px;flex-shrink:0;opacity:0.5;transition:opacity .15s;line-height:1"
+          onmouseover="this.style.opacity='1';this.style.color='#a83232'"
+          onmouseout="this.style.opacity='0.5';this.style.color='#5a4a3a'">&#x1F5D1;</button>
+      </div>`;
     el.onclick = () => { selectDeck(deck.id); closeSidebar(); };
     list.appendChild(el);
   });
@@ -986,10 +1058,10 @@ async function saveApiBibleKey() {
 }
 
 // Close modals on overlay click
-['settings-overlay', 'newdeck-overlay', 'import-overlay'].forEach(id => {
+['settings-overlay', 'newdeck-overlay', 'import-overlay', 'restore-overlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === document.getElementById(id)) {
-      id === 'settings-overlay' ? closeSettings() : id === 'import-overlay' ? closeImport() : closeNewDeck();
+      id === 'settings-overlay' ? closeSettings() : id === 'import-overlay' ? closeImport() : id === 'restore-overlay' ? closeRestoreBackup() : closeNewDeck();
     }
   });
 });
@@ -1225,6 +1297,151 @@ async function runImport() {
   document.getElementById('import-go-btn').style.display = 'none';
 
   setTimeout(() => closeImport(), 2000);
+}
+
+
+// ═══════════════════════════════════════
+// EXPORT BACKUP
+// ═══════════════════════════════════════
+function exportBackup() {
+  const backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    decks: state.decks
+  };
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `scripture-memory-backup-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════
+// RESTORE BACKUP
+// ═══════════════════════════════════════
+let restoreData = null;
+
+function openRestoreBackup() {
+  restoreData = null;
+  document.getElementById('restore-file-input').value = '';
+  document.getElementById('restore-preview').style.display = 'none';
+  document.getElementById('restore-go-btn').style.display = 'none';
+  document.getElementById('restore-status').textContent = '';
+  document.querySelector('input[name="restore-mode"][value="merge"]').checked = true;
+  document.getElementById('restore-overlay').classList.add('open');
+  closeSidebar();
+}
+
+function closeRestoreBackup() {
+  document.getElementById('restore-overlay').classList.remove('open');
+  restoreData = null;
+}
+
+function handleRestoreFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (!parsed.decks || !Array.isArray(parsed.decks)) {
+        throw new Error('Invalid backup file — no decks found.');
+      }
+      restoreData = parsed;
+      const totalVerses = parsed.decks.reduce((sum, d) => sum + (d.verses ? d.verses.length : 0), 0);
+      document.getElementById('restore-preview-label').textContent =
+        `Found ${parsed.decks.length} deck${parsed.decks.length !== 1 ? 's' : ''} and ${totalVerses} verse${totalVerses !== 1 ? 's' : ''} — exported ${parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString() : 'unknown date'}`;
+      document.getElementById('restore-preview').style.display = 'block';
+      document.getElementById('restore-go-btn').style.display = 'block';
+      document.getElementById('restore-status').textContent = '';
+    } catch(err) {
+      document.getElementById('restore-status').innerHTML = '&#10007; ' + err.message;
+      document.getElementById('restore-status').className = 'status-msg status-err';
+      document.getElementById('restore-go-btn').style.display = 'none';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Drag and drop for restore
+document.addEventListener('DOMContentLoaded', function() {
+  const rdz = document.getElementById('restore-dropzone');
+  if (rdz) {
+    rdz.addEventListener('dragover', e => { e.preventDefault(); rdz.classList.add('drag-over'); });
+    rdz.addEventListener('dragleave', () => rdz.classList.remove('drag-over'));
+    rdz.addEventListener('drop', e => {
+      e.preventDefault(); rdz.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('restore-file-input').files; // trigger same flow
+        const fakeEvent = { target: { files: [file], result: ev.target.result } };
+        // manually parse
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (!parsed.decks || !Array.isArray(parsed.decks)) throw new Error('Invalid backup file.');
+          restoreData = parsed;
+          const totalVerses = parsed.decks.reduce((sum, d) => sum + (d.verses ? d.verses.length : 0), 0);
+          document.getElementById('restore-preview-label').textContent =
+            `Found ${parsed.decks.length} deck${parsed.decks.length !== 1 ? 's' : ''} and ${totalVerses} verse${totalVerses !== 1 ? 's' : ''}`;
+          document.getElementById('restore-preview').style.display = 'block';
+          document.getElementById('restore-go-btn').style.display = 'block';
+          document.getElementById('restore-status').textContent = '';
+        } catch(err) {
+          document.getElementById('restore-status').innerHTML = '&#10007; ' + err.message;
+          document.getElementById('restore-status').className = 'status-msg status-err';
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+});
+
+function runRestore() {
+  if (!restoreData) return;
+  const mode = document.querySelector('input[name="restore-mode"]:checked').value;
+
+  if (mode === 'replace') {
+    if (!confirm('This will permanently delete all your current decks and verses and replace them with the backup. Are you sure?')) return;
+    state.decks = restoreData.decks;
+    state.activeDeckId = state.decks.length ? state.decks[0].id : null;
+    state.cardIndex = 0;
+  } else {
+    // Merge — add decks from backup, skip any with duplicate IDs
+    const existingIds = new Set(state.decks.map(d => d.id));
+    let added = 0;
+    restoreData.decks.forEach(deck => {
+      if (existingIds.has(deck.id)) {
+        // Give it a new ID to avoid collision
+        deck.id = Date.now().toString() + Math.random().toString(36).slice(2);
+      }
+      state.decks.push(deck);
+      added++;
+    });
+  }
+
+  save();
+  renderSidebar();
+
+  if (state.activeDeckId) {
+    selectDeck(state.activeDeckId);
+  } else if (state.decks.length) {
+    selectDeck(state.decks[0].id);
+  } else {
+    showNoDeck();
+  }
+
+  const statusEl = document.getElementById('restore-status');
+  statusEl.innerHTML = '&#10003; Restore complete!';
+  statusEl.className = 'status-msg status-ok';
+  setTimeout(() => closeRestoreBackup(), 1500);
 }
 
 function esc(s) {
