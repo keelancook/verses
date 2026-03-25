@@ -95,11 +95,15 @@ body {
 #add-form { padding: 10px 28px; background: var(--parchment-dark); border-bottom: 1px solid var(--parchment-deeper); display: none; gap: 8px; align-items: flex-end; flex-wrap: wrap; flex-shrink: 0; }
 .form-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px; }
 .form-group { display: flex; flex-direction: column; }
-input[type="text"], select, textarea { font-family: 'Crimson Pro', serif; font-size: 15px; color: var(--ink); background: var(--parchment); border: 1px solid var(--parchment-deeper); border-radius: 3px; padding: 7px 11px; outline: none; transition: border-color .2s, box-shadow .2s; }
+input[type="text"], select, textarea { font-family: 'Crimson Pro', serif; font-size: 15px; color: var(--ink); background: var(--parchment); border: 1px solid var(--parchment-deeper); border-radius: 3px; padding: 0 11px; height: 37px; outline: none; transition: border-color .2s, box-shadow .2s; }
 input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,148,58,.12); }
 #ref-input { width: 180px; }
 #trans-select { width: 130px; cursor: pointer; }
-.btn-add { background: var(--crimson); color: var(--parchment); border: none; border-radius: 3px; padding: 8px 18px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background .2s; }
+.btn-add { background: var(--crimson); color: var(--parchment); border: none; border-radius: 3px; padding: 0 16px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background .2s; height: 37px; line-height: 37px; }
+.btn-add-import { background: var(--ink); padding: 0; width: 37px; font-size: 15px; letter-spacing: 0; text-align: center; border-left: 1px solid rgba(255,255,255,.1); border-radius: 0 3px 3px 0; }
+.btn-add:first-child { border-radius: 3px 0 0 3px; }
+.btn-add-import:hover { background: var(--ink-light); }
+.btn-pair { display: flex; height: 37px; }
 .btn-add:hover { background: var(--crimson-light); }
 .btn-add:disabled { opacity: .5; cursor: not-allowed; }
 #fetch-status { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-faint); padding-bottom: 7px; min-width: 80px; }
@@ -138,7 +142,7 @@ input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gol
 .quiz-prompt { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; }
 .quiz-reference { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
 .quiz-hint { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: .08em; }
-textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; margin-top: 20px; }
+textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; margin-top: 20px; height: auto; padding: 8px 11px; }
 .quiz-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .btn-reveal { background: var(--sage); color: var(--parchment); border: none; border-radius: 3px; padding: 9px 20px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
 .btn-reveal:hover { background: #5a7056; }
@@ -311,6 +315,9 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   #add-form { padding: 10px 16px; }
   #ref-input, #trans-select, .form-group { width: 100%; }
   .btn-add { width: 100%; }
+  .btn-pair { width: 100%; }
+  .btn-add:first-child { flex: 1; }
+  .btn-add-import { flex-shrink: 0; }
   #verse-chips { padding: 8px 16px 0; }
   #card-area { padding: 16px; }
   .card { padding: 32px 26px; min-height: 200px; }
@@ -368,8 +375,13 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
       <span class="form-label">Translation</span>
       <select id="trans-select"></select>
     </div>
-    <button class="btn-add" id="add-btn" onclick="addVerse()">Add Verse</button>
-    <button class="btn-add" title="Import from Markdown file" onclick="openImport()" style="background:var(--ink);padding:8px 11px;font-size:13px;letter-spacing:0">&#8679;</button>
+    <div class="form-group">
+      <span class="form-label">&nbsp;</span>
+      <div class="btn-pair">
+        <button class="btn-add" id="add-btn" onclick="addVerse()">Add</button>
+        <button class="btn-add btn-add-import" title="Import from Markdown file" onclick="openImport()">&#8679;</button>
+      </div>
+    </div>
     <span id="fetch-status"></span>
   </div>
 
