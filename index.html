@@ -193,6 +193,100 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
 .status-ok { color: var(--sage); }
 .status-err { color: var(--crimson); }
 
+
+/* ── FOCUS MODE ── */
+#focus-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--parchment);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  cursor: pointer;
+  background-image:
+    radial-gradient(ellipse at 80% 10%, rgba(184,148,58,.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 10% 90%, rgba(74,94,70,.04) 0%, transparent 50%);
+}
+#focus-overlay.open { display: flex; }
+#focus-card {
+  width: 100%;
+  max-width: 680px;
+  background: var(--parchment);
+  border: 1px solid var(--parchment-deeper);
+  border-radius: 6px;
+  padding: 50px 56px;
+  box-shadow: var(--card-shadow);
+  position: relative;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: default;
+}
+#focus-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light) 50%, var(--gold));
+}
+.focus-ref { font-family: 'Playfair Display', serif; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+.focus-verse { font-family: 'Playfair Display', serif; font-size: 22px; font-style: italic; line-height: 1.7; color: var(--ink); }
+.focus-trans { margin-top: 22px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint); }
+.focus-counter { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink-faint); letter-spacing: .1em; }
+.focus-hint { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--ink-faint); letter-spacing: .1em; opacity: .5; margin-top: 8px; }
+#focus-exit {
+  position: fixed;
+  top: 16px; right: 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: .4;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  #focus-card { padding: 36px 28px; min-height: 220px; }
+  .focus-verse { font-size: 18px; }
+}
+
+/* ── IMPORT MODAL ── */
+#import-modal { max-width: 500px; }
+.import-dropzone {
+  border: 2px dashed var(--parchment-deeper);
+  border-radius: 4px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.import-dropzone:hover, .import-dropzone.drag-over {
+  border-color: var(--gold);
+  background: rgba(184,148,58,.04);
+}
+.import-dropzone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.import-drop-icon { font-size: 28px; margin-bottom: 8px; opacity: .4; }
+.import-drop-label { font-family: 'Crimson Pro', serif; font-size: 16px; color: var(--ink-faint); }
+.import-drop-hint { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--ink-faint); letter-spacing: .08em; text-transform: uppercase; margin-top: 5px; opacity: .6; }
+#import-preview { margin-top: 14px; display: none; }
+.import-preview-header { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+.import-preview-list { max-height: 160px; overflow-y: auto; border: 1px solid var(--parchment-deeper); border-radius: 3px; }
+.import-preview-list::-webkit-scrollbar { width: 3px; }
+.import-preview-list::-webkit-scrollbar-thumb { background: rgba(184,148,58,.3); }
+.import-preview-item { padding: 7px 12px; border-bottom: 1px solid var(--parchment-deeper); font-family: 'Crimson Pro', serif; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.import-preview-item:last-child { border-bottom: none; }
+.import-preview-trans { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--ink-faint); }
+#import-progress { margin-top: 10px; display: none; }
+.progress-bar-wrap { background: var(--parchment-deeper); border-radius: 10px; height: 6px; overflow: hidden; margin-bottom: 6px; }
+.progress-bar-fill { height: 100%; background: var(--gold); border-radius: 10px; transition: width .3s; width: 0%; }
+.progress-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-faint); }
+
 /* ── ANIMATIONS ── */
 .slide-out-left  { animation: slideOutLeft  .22s forwards; }
 .slide-out-right { animation: slideOutRight .22s forwards; }
@@ -245,6 +339,7 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   <div class="sidebar-actions">
     <button class="btn-new-deck" onclick="openNewDeck()">+ New Deck</button>
     <button class="btn-settings" onclick="openSettings()">&#9881; Settings</button>
+    <button class="btn-settings" style="margin-top:7px" onclick="openImport()">&#8679; Import from Markdown</button>
   </div>
   <div class="decks-label">Your Decks</div>
   <div id="deck-list"></div>
@@ -258,6 +353,7 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
       Scripture Memory
       <span id="deck-sub">Select or create a deck</span>
     </div>
+    <button id="focus-btn" style="display:none;background:transparent;border:1px solid var(--parchment-deeper);border-radius:3px;padding:6px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;color:var(--ink-faint);flex-shrink:0;transition:all .15s" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink-faint)'" onclick="openFocusMode()">&#9654; Focus</button>
     <div class="mode-tabs" id="mode-tabs" style="display:none">
       <button class="mode-tab active" id="tab-review" onclick="setMode('review')">Review</button>
       <button class="mode-tab" id="tab-quiz" onclick="setMode('quiz')">Quiz</button>
@@ -333,6 +429,59 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
 
   </div>
 </main>
+
+
+<!-- FOCUS MODE OVERLAY -->
+<div id="focus-overlay" onclick="handleFocusClick(event)">
+  <div id="focus-exit">Tap outside card to exit</div>
+  <div id="focus-card" onclick="event.stopPropagation()">
+    <div class="focus-ref" id="focus-ref"></div>
+    <div class="focus-verse" id="focus-verse"></div>
+    <div class="focus-trans" id="focus-trans"></div>
+  </div>
+  <div class="focus-counter" id="focus-counter"></div>
+  <div class="focus-hint">&#8592; swipe or tap sides to navigate &#8594;</div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="overlay" id="import-overlay">
+  <div class="modal" id="import-modal">
+    <div class="modal-title">Import from Markdown</div>
+    <div class="modal-sub">Upload a .md file with a translation on the first line and one verse reference per line.</div>
+    <div class="modal-field">
+      <label>Format Example</label>
+      <div style="background:var(--parchment-dark);border:1px solid var(--parchment-deeper);border-radius:3px;padding:12px 14px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;color:var(--ink-faint)">
+        translation: CSB<br>
+        <br>
+        John 3:16<br>
+        Romans 8:28<br>
+        - Philippians 4:13<br>
+        - Psalm 23:1-3
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Upload File</label>
+      <div class="import-dropzone" id="import-dropzone">
+        <input type="file" accept=".md,.txt" id="import-file-input" onchange="handleImportFile(event)">
+        <div class="import-drop-icon">&#8679;</div>
+        <div class="import-drop-label">Drop your .md file here or click to browse</div>
+        <div class="import-drop-hint">.md or .txt files</div>
+      </div>
+    </div>
+    <div id="import-preview">
+      <div class="import-preview-header" id="import-preview-header"></div>
+      <div class="import-preview-list" id="import-preview-list"></div>
+    </div>
+    <div id="import-progress">
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="import-progress-bar"></div></div>
+      <div class="progress-label" id="import-progress-label"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-primary btn-primary-red" id="import-go-btn" onclick="runImport()" style="display:none">Import All Verses</button>
+      <button class="btn-secondary" onclick="closeImport()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- NEW DECK MODAL -->
 <div class="overlay" id="newdeck-overlay">
@@ -511,6 +660,7 @@ function selectDeck(id) {
     : `${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}`);
   document.getElementById('add-form').style.display = 'flex';
   document.getElementById('mode-tabs').style.display = 'flex';
+  document.getElementById('focus-btn').style.display = deck.verses.length > 0 ? 'block' : 'none';
   document.getElementById('no-deck-state').style.display = 'none';
   renderCards(); renderChips();
 }
@@ -558,6 +708,7 @@ async function addVerse() {
     state.cardIndex = deck.verses.length - 1;
     save(); renderCards(); renderChips(); renderSidebar();
     setTopbarTitle(deck.name, `${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}`);
+    document.getElementById('focus-btn').style.display = 'block';
     document.getElementById('ref-input').value = '';
     status.innerHTML = '&#10003; Added';
     setTimeout(() => status.innerHTML = '', 2500);
@@ -627,7 +778,11 @@ async function fetchFree(ref, trans) {
 function stripHtml(html) {
   const d = document.createElement('div');
   d.innerHTML = html || '';
-  return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+  return (d.textContent || d.innerText || '')
+    .replace(/(\d)([A-Z])/g, '$1 $2')
+    .replace(/(\d)([a-z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ═══════════════════════════════════════
@@ -829,13 +984,248 @@ async function saveApiBibleKey() {
 }
 
 // Close modals on overlay click
-['settings-overlay', 'newdeck-overlay'].forEach(id => {
+['settings-overlay', 'newdeck-overlay', 'import-overlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === document.getElementById(id)) {
-      id === 'settings-overlay' ? closeSettings() : closeNewDeck();
+      id === 'settings-overlay' ? closeSettings() : id === 'import-overlay' ? closeImport() : closeNewDeck();
     }
   });
 });
+
+
+// ═══════════════════════════════════════
+// FOCUS MODE
+// ═══════════════════════════════════════
+let focusIndex = 0;
+let focusTouchStartX = 0;
+
+function openFocusMode() {
+  const deck = getDeck();
+  if (!deck || !deck.verses.length) return;
+  focusIndex = state.cardIndex;
+  renderFocusCard();
+  document.getElementById('focus-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFocusMode() {
+  document.getElementById('focus-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  // sync main card index
+  state.cardIndex = focusIndex;
+  showCard();
+  renderChips();
+}
+
+function renderFocusCard() {
+  const deck = getDeck();
+  if (!deck || !deck.verses.length) return;
+  focusIndex = Math.max(0, Math.min(focusIndex, deck.verses.length - 1));
+  const v = deck.verses[focusIndex];
+  document.getElementById('focus-ref').textContent   = v.ref;
+  document.getElementById('focus-verse').textContent = v.text;
+  document.getElementById('focus-trans').textContent = v.translation;
+  document.getElementById('focus-counter').textContent =
+    `${focusIndex + 1} / ${deck.verses.length}`;
+}
+
+function handleFocusClick(e) {
+  // if click is directly on overlay (outside card), exit
+  if (e.target === document.getElementById('focus-overlay') ||
+      e.target === document.getElementById('focus-counter') ||
+      e.target === document.getElementById('focus-exit') ||
+      e.target.classList.contains('focus-hint')) {
+    closeFocusMode();
+  }
+}
+
+function focusNavigate(dir) {
+  const deck = getDeck(); if (!deck) return;
+  const newIdx = focusIndex + dir;
+  if (newIdx < 0 || newIdx >= deck.verses.length) return;
+  const card = document.getElementById('focus-card');
+  const outClass = dir > 0 ? 'slide-out-left'  : 'slide-out-right';
+  const inClass  = dir > 0 ? 'slide-in-left'   : 'slide-in-right';
+  card.classList.add(outClass);
+  setTimeout(() => {
+    card.classList.remove(outClass);
+    focusIndex = newIdx;
+    renderFocusCard();
+    card.classList.add(inClass);
+    setTimeout(() => card.classList.remove(inClass), 260);
+  }, 200);
+}
+
+// Touch swipe in focus mode
+const focusOverlay = document.getElementById('focus-overlay');
+focusOverlay.addEventListener('touchstart', e => {
+  focusTouchStartX = e.touches[0].clientX;
+}, { passive: true });
+focusOverlay.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - focusTouchStartX;
+  if (Math.abs(dx) > 50) focusNavigate(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+// Keyboard in focus mode
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('focus-overlay').classList.contains('open')) return;
+  if (e.key === 'Escape') closeFocusMode();
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') focusNavigate(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   focusNavigate(-1);
+});
+
+// ═══════════════════════════════════════
+// BULK IMPORT
+// ═══════════════════════════════════════
+let importQueue = []; // [{ref, transId, label}]
+
+function openImport() {
+  importQueue = [];
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-progress').style.display = 'none';
+  document.getElementById('import-go-btn').style.display = 'none';
+  document.getElementById('import-file-input').value = '';
+  document.getElementById('import-overlay').classList.add('open');
+  closeSidebar();
+}
+function closeImport() {
+  document.getElementById('import-overlay').classList.remove('open');
+  importQueue = [];
+}
+
+function handleImportFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => parseImportFile(ev.target.result);
+  reader.readAsText(file);
+}
+
+// Drag and drop
+const dropzone = document.getElementById('import-dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault(); dropzone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => parseImportFile(ev.target.result);
+  reader.readAsText(file);
+});
+
+function parseImportFile(text) {
+  const lines = text.split(/
+?
+/).map(l => l.trim()).filter(l => l);
+
+  // Extract translation from first non-empty line
+  let transId = 'esv'; // default
+  let transLabel = 'ESV';
+  let startIdx = 0;
+
+  const firstLine = lines[0] || '';
+  const transMatch = firstLine.match(/^translation\s*:\s*(.+)$/i);
+  if (transMatch) {
+    const requestedTrans = transMatch[1].trim().toLowerCase();
+    const found = ALL_TRANSLATIONS.find(t =>
+      t.id === requestedTrans ||
+      t.label.toLowerCase() === requestedTrans ||
+      t.name.toLowerCase().includes(requestedTrans)
+    );
+    if (found) {
+      transId = found.id;
+      transLabel = found.label;
+    }
+    startIdx = 1;
+  }
+
+  // Check translation is available
+  const transObj = ALL_TRANSLATIONS.find(t => t.id === transId);
+  if (transObj && transObj.source === 'apibible' && !state.apiBibleKey) {
+    alert(`${transLabel} requires your API.Bible key. Please add it in Settings first.`);
+    return;
+  }
+
+  // Parse verse references — support plain lines and markdown list items
+  const refs = [];
+  for (let i = startIdx; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line || line.startsWith('#') || line.startsWith('translation')) continue;
+    // Strip markdown list markers: "- ", "* ", "1. "
+    const ref = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+    if (ref) refs.push(ref);
+  }
+
+  if (!refs.length) {
+    alert('No verse references found in the file.');
+    return;
+  }
+
+  importQueue = refs.map(ref => ({ ref, transId, label: transLabel }));
+
+  // Show preview
+  const previewList = document.getElementById('import-preview-list');
+  previewList.innerHTML = '';
+  importQueue.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'import-preview-item';
+    row.innerHTML = `<span>${esc(item.ref)}</span><span class="import-preview-trans">${esc(item.label)}</span>`;
+    previewList.appendChild(row);
+  });
+  document.getElementById('import-preview-header').textContent =
+    `${importQueue.length} verse${importQueue.length !== 1 ? 's' : ''} found — translation: ${transLabel}`;
+  document.getElementById('import-preview').style.display = 'block';
+  document.getElementById('import-go-btn').style.display = 'block';
+}
+
+async function runImport() {
+  const deck = getDeck();
+  if (!deck) { alert('Please select or create a deck first.'); return; }
+  if (!importQueue.length) return;
+
+  document.getElementById('import-go-btn').style.display = 'none';
+  document.getElementById('import-progress').style.display = 'block';
+
+  const bar = document.getElementById('import-progress-bar');
+  const label = document.getElementById('import-progress-label');
+  const total = importQueue.length;
+  let done = 0; let failed = 0;
+
+  for (const item of importQueue) {
+    label.textContent = `Fetching ${done + 1} of ${total}: ${item.ref}…`;
+    try {
+      const transObj = ALL_TRANSLATIONS.find(t => t.id === item.transId);
+      let result;
+      if (transObj.source === 'esv') {
+        result = await fetchESV(item.ref);
+      } else if (transObj.source === 'apibible') {
+        result = await fetchApiBible(item.ref, item.transId);
+      } else {
+        result = await fetchFree(item.ref, item.transId);
+      }
+      deck.verses.push({ ref: result.ref, text: result.text, translation: item.label, transId: item.transId });
+    } catch(e) {
+      failed++;
+      console.warn(`Failed to fetch ${item.ref}:`, e.message);
+    }
+    done++;
+    bar.style.width = `${(done / total) * 100}%`;
+    // Small delay to avoid rate limiting
+    await new Promise(r => setTimeout(r, 300));
+  }
+
+  save();
+  state.cardIndex = Math.max(0, deck.verses.length - importQueue.length);
+  renderCards(); renderChips(); renderSidebar();
+  setTopbarTitle(deck.name, `${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}`);
+
+  const successCount = total - failed;
+  label.innerHTML = `&#10003; Done! ${successCount} imported${failed ? `, ${failed} failed (check console)` : ''}.`;
+  document.getElementById('import-go-btn').style.display = 'none';
+
+  setTimeout(() => closeImport(), 2000);
+}
 
 function esc(s) {
   return String(s)
