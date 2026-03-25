@@ -339,9 +339,6 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   <div class="sidebar-actions">
     <button class="btn-new-deck" onclick="openNewDeck()">+ New Deck</button>
     <button class="btn-settings" onclick="openSettings()">&#9881; Settings</button>
-    <button class="btn-settings" style="margin-top:7px" onclick="openImport()">&#8679; Import from Markdown</button>
-    <button class="btn-settings" style="margin-top:7px" onclick="exportBackup()">&#8675; Export Backup</button>
-    <button class="btn-settings" style="margin-top:7px" onclick="openRestoreBackup()">&#8679; Restore Backup</button>
   </div>
   <div class="decks-label">Your Decks</div>
   <div id="deck-list"></div>
@@ -542,26 +539,35 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
 <div class="overlay" id="settings-overlay">
   <div class="modal" id="settings-modal">
     <div class="modal-title">Settings</div>
-    <div class="modal-sub">Manage translations and your API.Bible key.</div>
 
-    <!-- Translation list -->
-    <div class="modal-field">
-      <label>Translations</label>
+    <!-- Section: Translations -->
+    <div style="margin-bottom:6px;margin-top:18px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)">Translations</div>
+    <div class="modal-field" style="margin-bottom:0">
       <div class="trans-list" id="trans-status-list"></div>
     </div>
 
-    <!-- API.Bible key -->
-    <div class="modal-field">
-      <label>API.Bible Key <span style="font-size:11px;color:var(--gold);font-family:'Crimson Pro',serif;font-style:italic">(unlocks CSB, NIV, NASB)</span></label>
+    <!-- Section: API.Bible key -->
+    <div style="margin-bottom:6px;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)">API.Bible Key <span style="color:var(--gold)">&mdash; unlocks CSB, NIV, NASB</span></div>
+    <div class="modal-field" style="margin-bottom:0">
       <div class="key-row">
         <input type="text" id="apibible-key-input" placeholder="Paste your API.Bible key here">
         <button class="btn-save-key" onclick="saveApiBibleKey()">Save</button>
       </div>
-      <div class="modal-hint">Must be hosted at your registered domain to work. Get your key at <a href="https://scripture.api.bible" target="_blank">scripture.api.bible</a>.</div>
+      <div class="modal-hint" style="margin-top:6px">Must be hosted at your registered domain. Get your key at <a href="https://scripture.api.bible" target="_blank">scripture.api.bible</a>.</div>
       <div class="status-msg" id="apibible-key-status"></div>
     </div>
 
-    <div class="modal-actions">
+    <!-- Section: Data -->
+    <div style="margin-bottom:6px;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)">Data</div>
+    <div class="modal-field" style="margin-bottom:0">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="openImport();closeSettings()">&#8679; Import from Markdown</button>
+        <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="exportBackup()">&#8675; Export Backup</button>
+        <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="openRestoreBackup();closeSettings()">&#8679; Restore Backup</button>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:24px">
       <button class="btn-primary" onclick="closeSettings()">Done</button>
     </div>
   </div>
@@ -759,8 +765,113 @@ function renderSidebar() {
 // ═══════════════════════════════════════
 // FETCH VERSE
 // ═══════════════════════════════════════
+
+// ═══════════════════════════════════════
+// REFERENCE NORMALIZER
+// Converts common abbreviations to full
+// book names before sending to APIs
+// ═══════════════════════════════════════
+const BOOK_ABBREVS = {
+  // Old Testament
+  'gen': 'Genesis', 'ge': 'Genesis',
+  'ex': 'Exodus', 'exo': 'Exodus',
+  'lev': 'Leviticus', 'le': 'Leviticus',
+  'num': 'Numbers', 'nu': 'Numbers', 'nm': 'Numbers',
+  'deut': 'Deuteronomy', 'deu': 'Deuteronomy', 'dt': 'Deuteronomy',
+  'josh': 'Joshua', 'jos': 'Joshua',
+  'judg': 'Judges', 'jdg': 'Judges', 'jg': 'Judges',
+  'ru': 'Ruth', 'rut': 'Ruth',
+  '1sa': '1 Samuel', '1sam': '1 Samuel', '1 sa': '1 Samuel', '1 sam': '1 Samuel',
+  '2sa': '2 Samuel', '2sam': '2 Samuel', '2 sa': '2 Samuel', '2 sam': '2 Samuel',
+  '1ki': '1 Kings', '1kin': '1 Kings', '1 ki': '1 Kings', '1 kin': '1 Kings',
+  '2ki': '2 Kings', '2kin': '2 Kings', '2 ki': '2 Kings', '2 kin': '2 Kings',
+  '1ch': '1 Chronicles', '1chr': '1 Chronicles', '1 ch': '1 Chronicles', '1 chr': '1 Chronicles', '1 chron': '1 Chronicles',
+  '2ch': '2 Chronicles', '2chr': '2 Chronicles', '2 ch': '2 Chronicles', '2 chr': '2 Chronicles', '2 chron': '2 Chronicles',
+  'ezr': 'Ezra',
+  'neh': 'Nehemiah',
+  'est': 'Esther', 'esth': 'Esther',
+  'job': 'Job',
+  'ps': 'Psalms', 'psa': 'Psalms', 'pss': 'Psalms', 'psm': 'Psalms',
+  'pro': 'Proverbs', 'prov': 'Proverbs', 'pr': 'Proverbs',
+  'ecc': 'Ecclesiastes', 'eccl': 'Ecclesiastes', 'eccles': 'Ecclesiastes', 'qoh': 'Ecclesiastes',
+  'ss': 'Song of Solomon', 'sos': 'Song of Solomon', 'song': 'Song of Solomon', 'sg': 'Song of Solomon',
+  'isa': 'Isaiah', 'is': 'Isaiah',
+  'jer': 'Jeremiah', 'je': 'Jeremiah',
+  'lam': 'Lamentations', 'la': 'Lamentations',
+  'ezk': 'Ezekiel', 'eze': 'Ezekiel', 'ezek': 'Ezekiel',
+  'dan': 'Daniel', 'da': 'Daniel',
+  'hos': 'Hosea', 'ho': 'Hosea',
+  'joe': 'Joel', 'jl': 'Joel',
+  'amo': 'Amos', 'am': 'Amos',
+  'oba': 'Obadiah', 'ob': 'Obadiah',
+  'jon': 'Jonah',
+  'mic': 'Micah', 'mi': 'Micah',
+  'nah': 'Nahum', 'na': 'Nahum',
+  'hab': 'Habakkuk',
+  'zep': 'Zephaniah', 'zeph': 'Zephaniah',
+  'hag': 'Haggai', 'hg': 'Haggai',
+  'zec': 'Zechariah', 'zech': 'Zechariah',
+  'mal': 'Malachi',
+  // New Testament
+  'mt': 'Matthew', 'matt': 'Matthew', 'mat': 'Matthew',
+  'mk': 'Mark', 'mar': 'Mark',
+  'lk': 'Luke', 'luk': 'Luke',
+  'jn': 'John', 'joh': 'John',
+  'ac': 'Acts', 'act': 'Acts',
+  'ro': 'Romans', 'rom': 'Romans',
+  '1co': '1 Corinthians', '1cor': '1 Corinthians', '1 co': '1 Corinthians', '1 cor': '1 Corinthians',
+  '2co': '2 Corinthians', '2cor': '2 Corinthians', '2 co': '2 Corinthians', '2 cor': '2 Corinthians',
+  'gal': 'Galatians', 'ga': 'Galatians',
+  'eph': 'Ephesians',
+  'php': 'Philippians', 'phil': 'Philippians', 'pp': 'Philippians',
+  'col': 'Colossians',
+  '1th': '1 Thessalonians', '1thes': '1 Thessalonians', '1 th': '1 Thessalonians', '1 thes': '1 Thessalonians', '1 thess': '1 Thessalonians',
+  '2th': '2 Thessalonians', '2thes': '2 Thessalonians', '2 th': '2 Thessalonians', '2 thes': '2 Thessalonians', '2 thess': '2 Thessalonians',
+  '1ti': '1 Timothy', '1tim': '1 Timothy', '1 ti': '1 Timothy', '1 tim': '1 Timothy',
+  '2ti': '2 Timothy', '2tim': '2 Timothy', '2 ti': '2 Timothy', '2 tim': '2 Timothy',
+  'tit': 'Titus', 'ti': 'Titus',
+  'phm': 'Philemon', 'phlm': 'Philemon',
+  'heb': 'Hebrews',
+  'jas': 'James', 'ja': 'James', 'jm': 'James',
+  '1pe': '1 Peter', '1pet': '1 Peter', '1 pe': '1 Peter', '1 pet': '1 Peter',
+  '2pe': '2 Peter', '2pet': '2 Peter', '2 pe': '2 Peter', '2 pet': '2 Peter',
+  '1jn': '1 John', '1jo': '1 John', '1 jn': '1 John', '1 jo': '1 John',
+  '2jn': '2 John', '2jo': '2 John', '2 jn': '2 John', '2 jo': '2 John',
+  '3jn': '3 John', '3jo': '3 John', '3 jn': '3 John', '3 jo': '3 John',
+  'jud': 'Jude',
+  're': 'Revelation', 'rev': 'Revelation',
+};
+
+function normalizeRef(ref) {
+  if (!ref) return ref;
+  // Split into book part and chapter:verse part
+  // Match: optional number prefix, book name, then chapter:verse
+  const match = ref.trim().match(/^(\d\s*)?([a-zA-Z]+\.?)(\s+\d.*)?$/);
+  if (!match) return ref;
+
+  const numPrefix = (match[1] || '').trim();
+  const bookPart  = (match[2] || '').trim().toLowerCase().replace(/\.$/, '');
+  const rest      = (match[3] || '').trim();
+
+  // Build lookup key: "1 cor" style with number prefix
+  const lookupKey = numPrefix ? `${numPrefix} ${bookPart}` : bookPart;
+  const lookupKeyCompact = numPrefix ? `${numPrefix}${bookPart}` : bookPart;
+
+  const expanded =
+    BOOK_ABBREVS[lookupKey] ||
+    BOOK_ABBREVS[lookupKeyCompact] ||
+    BOOK_ABBREVS[bookPart] ||
+    null;
+
+  if (expanded) {
+    return rest ? `${expanded} ${rest}` : expanded;
+  }
+  // Return original if no match found — API may still handle it
+  return ref;
+}
+
 async function addVerse() {
-  const ref = document.getElementById('ref-input').value.trim();
+  const ref = normalizeRef(document.getElementById('ref-input').value.trim());
   const transId = document.getElementById('trans-select').value;
   if (!ref) return;
   const transObj = ALL_TRANSLATIONS.find(t => t.id === transId);
@@ -1225,7 +1336,7 @@ function parseImportFile(text) {
     const line = lines[i];
     if (!line || line.startsWith('#') || line.startsWith('translation')) continue;
     // Strip markdown list markers: "- ", "* ", "1. "
-    const ref = line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+    const ref = normalizeRef(line.replace(/^[-*]\s+/, '').replace(/^\d+\.\s+/, '').trim());
     if (ref) refs.push(ref);
   }
 
