@@ -100,12 +100,15 @@ input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gol
 #ref-input { width: 180px; }
 #trans-select { width: 130px; cursor: pointer; }
 .btn-add { background: var(--crimson); color: var(--parchment); border: none; border-radius: 3px; padding: 0 16px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background .2s; height: 37px; line-height: 37px; }
-.btn-add-import { background: var(--ink); padding: 0; width: 37px; font-size: 15px; letter-spacing: 0; text-align: center; border-left: 1px solid rgba(255,255,255,.1); border-radius: 0 3px 3px 0; }
-.btn-add:first-child { border-radius: 3px 0 0 3px; }
-.btn-add-import:hover { background: var(--ink-light); }
-.btn-pair { display: flex; height: 37px; }
+.btn-icon { width: 37px; height: 37px; border: none; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; line-height: 1; transition: background .2s, transform .1s; flex-shrink: 0; }
+.btn-icon:active { transform: scale(.93); }
+.btn-icon { background: var(--crimson); color: var(--parchment); }
+.btn-icon:hover { background: var(--crimson-light); }
+.btn-icon-import { background: var(--ink); color: var(--parchment); }
+.btn-icon-import:hover { background: var(--ink-light); }
 .btn-add:hover { background: var(--crimson-light); }
 .btn-add:disabled { opacity: .5; cursor: not-allowed; }
+.btn-icon:disabled { opacity: .5; cursor: not-allowed; }
 #fetch-status { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-faint); padding-bottom: 7px; min-width: 80px; }
 
 /* ── CHIPS ── */
@@ -315,9 +318,7 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   #add-form { padding: 10px 16px; }
   #ref-input, #trans-select, .form-group { width: 100%; }
   .btn-add { width: 100%; }
-  .btn-pair { width: 100%; }
-  .btn-add:first-child { flex: 1; }
-  .btn-add-import { flex-shrink: 0; }
+  .btn-icon { width: 37px; flex-shrink: 0; }
   #verse-chips { padding: 8px 16px 0; }
   #card-area { padding: 16px; }
   .card { padding: 32px 26px; min-height: 200px; }
@@ -377,10 +378,11 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
     </div>
     <div class="form-group">
       <span class="form-label">&nbsp;</span>
-      <div class="btn-pair">
-        <button class="btn-add" id="add-btn" onclick="addVerse()">Add</button>
-        <button class="btn-add btn-add-import" title="Import from Markdown file" onclick="openImport()">&#8679;</button>
-      </div>
+      <button class="btn-icon" id="add-btn" onclick="addVerse()" title="Add verse">&#43;</button>
+    </div>
+    <div class="form-group">
+      <span class="form-label">&nbsp;</span>
+      <button class="btn-icon btn-icon-import" onclick="openImport()" title="Import from Markdown file">&#10514;</button>
     </div>
     <span id="fetch-status"></span>
   </div>
