@@ -369,10 +369,25 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
       <select id="trans-select"></select>
     </div>
     <button class="btn-add" id="add-btn" onclick="addVerse()">Add Verse</button>
+    <button class="btn-add" title="Import from Markdown file" onclick="openImport()" style="background:var(--ink);padding:8px 11px;font-size:13px;letter-spacing:0">&#8679;</button>
     <span id="fetch-status"></span>
   </div>
 
-  <div id="verse-chips"></div>
+  <div id="verse-chips-wrap" style="flex-shrink:0;display:none">
+    <button id="chips-toggle" onclick="toggleChips()" style="
+      display:flex;align-items:center;gap:6px;
+      background:none;border:none;
+      padding:8px 28px 4px;
+      font-family:'DM Mono',monospace;font-size:9px;
+      letter-spacing:.12em;text-transform:uppercase;
+      color:var(--ink-faint);cursor:pointer;width:100%;text-align:left;
+      transition:color .15s
+    " onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--ink-faint)'">
+      <span id="chips-arrow" style="font-size:10px;transition:transform .2s">&#9654;</span>
+      <span id="chips-label">Show Verses</span>
+    </button>
+    <div id="verse-chips" style="display:none;padding-bottom:6px"></div>
+  </div>
 
   <div id="card-area">
 
@@ -561,7 +576,6 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
     <div style="margin-bottom:6px;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)">Data</div>
     <div class="modal-field" style="margin-bottom:0">
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="openImport();closeSettings()">&#8679; Import from Markdown</button>
         <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="exportBackup()">&#8675; Export Backup</button>
         <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="openRestoreBackup();closeSettings()">&#8679; Restore Backup</button>
       </div>
@@ -724,7 +738,7 @@ function createDeck() {
   save(); renderSidebar(); selectDeck(deck.id); closeNewDeck(); closeSidebar();
 }
 function selectDeck(id) {
-  state.activeDeckId = id; state.cardIndex = 0; save(); renderSidebar();
+  state.activeDeckId = id; state.cardIndex = 0; chipsOpen = false; save(); renderSidebar();
   const deck = getDeck();
   if (!deck) return;
   setTopbarTitle(deck.name, deck.verses.length === 0
@@ -1044,6 +1058,8 @@ function renderChips() {
   const container = document.getElementById('verse-chips');
   container.innerHTML = '';
   if (!deck) return;
+  showChipsWrap(deck.verses.length > 0);
+  if (deck.verses.length > 0) updateChipsLabel();
   deck.verses.forEach((v, i) => {
     const chip = document.createElement('div');
     chip.className = 'verse-chip' + (i === state.cardIndex && state.mode === 'review' ? ' current' : '');
@@ -1553,6 +1569,37 @@ function runRestore() {
   statusEl.innerHTML = '&#10003; Restore complete!';
   statusEl.className = 'status-msg status-ok';
   setTimeout(() => closeRestoreBackup(), 1500);
+}
+
+
+// ─── CHIPS TOGGLE ───
+let chipsOpen = false;
+
+function toggleChips() {
+  chipsOpen = !chipsOpen;
+  document.getElementById('verse-chips').style.display = chipsOpen ? 'flex' : 'none';
+  document.getElementById('verse-chips').style.flexWrap = 'wrap';
+  document.getElementById('verse-chips').style.gap = '5px';
+  document.getElementById('verse-chips').style.padding = chipsOpen ? '0 28px 6px' : '0';
+  document.getElementById('chips-arrow').style.transform = chipsOpen ? 'rotate(90deg)' : '';
+  updateChipsLabel();
+}
+
+function updateChipsLabel() {
+  const deck = getDeck();
+  const count = deck ? deck.verses.length : 0;
+  document.getElementById('chips-label').textContent = chipsOpen
+    ? 'Hide Verses'
+    : `Show Verses (${count})`;
+}
+
+function showChipsWrap(show) {
+  document.getElementById('verse-chips-wrap').style.display = show ? 'block' : 'none';
+  if (!show) {
+    chipsOpen = false;
+    document.getElementById('verse-chips').style.display = 'none';
+    document.getElementById('chips-arrow').style.transform = '';
+  }
 }
 
 function esc(s) {
