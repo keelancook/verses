@@ -588,11 +588,13 @@ function load() {
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-load();
-buildTransSelect();
-renderSidebar();
-if (state.activeDeckId) selectDeck(state.activeDeckId);
-else showNoDeck();
+document.addEventListener('DOMContentLoaded', function() {
+  load();
+  buildTransSelect();
+  renderSidebar();
+  if (state.activeDeckId) selectDeck(state.activeDeckId);
+  else showNoDeck();
+});
 
 // ═══════════════════════════════════════
 // TRANSLATION DROPDOWN
@@ -931,7 +933,7 @@ function openSettings() {
 }
 function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open');
-  buildTransSelect(); // rebuild dropdown in case key was added/removed
+  buildTransSelect(); // rebuild dropdown in case key was added or removed
 }
 
 function renderTransStatusList() {
