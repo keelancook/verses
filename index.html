@@ -1117,9 +1117,7 @@ dropzone.addEventListener('drop', e => {
 });
 
 function parseImportFile(text) {
-  const lines = text.split(/
-?
-/).map(l => l.trim()).filter(l => l);
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
 
   // Extract translation from first non-empty line
   let transId = 'esv'; // default
