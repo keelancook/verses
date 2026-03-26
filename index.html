@@ -402,6 +402,12 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   .quiz-reference { font-size: 19px; }
 }
 </style>
+  <!-- API.Bible FUMS Fair Use Tracking -->
+  <script type="text/javascript" src="https://pkg.api.bible/fumsV3.min.js"></script>
+  <script>
+    window.fumsData = window.fumsData || [];
+    window.fums = window.fums || function() { window.fumsData.push(arguments); };
+  </script>
 </head>
 <body>
 
@@ -736,6 +742,24 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
         <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="exportBackup()">&#8675; Export Backup</button>
         <button class="btn-settings" style="width:100%;text-align:left;padding:9px 14px" onclick="openRestoreBackup();closeSettings()">&#8679; Restore Backup</button>
       </div>
+    </div>
+
+    <!-- Section: Attribution -->
+    <div style="margin-bottom:6px;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint)">Scripture Attribution</div>
+    <div style="font-family:'Crimson Pro',serif;font-size:13px;color:var(--ink-faint);line-height:1.7;border:1px solid var(--parchment-deeper);border-radius:3px;padding:12px 14px;background:var(--parchment)">
+      <strong style="font-size:14px;color:var(--ink)">Christian Standard Bible (CSB)</strong><br>
+      Copyright &copy; 2017 by Holman Bible Publishers. Used by permission.
+      <br><br>
+      <strong style="font-size:14px;color:var(--ink)">New International Version (NIV)</strong><br>
+      Copyright &copy; 1973, 1978, 1984, 2011 by Biblica, Inc.&trade; Used by permission. All rights reserved worldwide.
+      <br><br>
+      <strong style="font-size:14px;color:var(--ink)">New American Standard Bible (NASB 2020)</strong><br>
+      Copyright &copy; 1960, 1971, 1977, 1995, 2020 by The Lockman Foundation. All rights reserved.
+      <br><br>
+      <strong style="font-size:14px;color:var(--ink)">English Standard Version (ESV)</strong><br>
+      Copyright &copy; 2001 by Crossway, a publishing ministry of Good News Publishers. Used by permission.
+      <br><br>
+      <span style="font-size:12px">Scripture accessed via <a href="https://scripture.api.bible" target="_blank" style="color:var(--gold)">API.Bible</a> from the American Bible Society.</span>
     </div>
 
     <div class="modal-actions" style="margin-top:24px">
@@ -1138,7 +1162,7 @@ async function fetchApiBible(ref, transId) {
   if (!state.apiBibleKey) throw new Error('API.Bible key not set — open Settings');
   const bibleId = APIBIBLE_IDS[transId];
   if (!bibleId) throw new Error(`No Bible ID configured for ${transId.toUpperCase()}`);
-  const url = `${APIBIBLE_BASE}/bibles/${bibleId}/search?query=${encodeURIComponent(ref)}&limit=5&sort=relevance`;
+  const url = `${APIBIBLE_BASE}/bibles/${bibleId}/search?query=${encodeURIComponent(ref)}&limit=5&sort=relevance&fums-version=3`;
   const res = await fetch(url, { headers: { 'api-key': state.apiBibleKey } });
   if (!res.ok) {
     let msg = `API.Bible error ${res.status}`;
@@ -1147,6 +1171,22 @@ async function fetchApiBible(ref, transId) {
     throw new Error(msg);
   }
   const data = await res.json();
+
+  // Fire FUMS tracking token (required by API.Bible fair use policy)
+  try {
+    const tokens = [];
+    if (data.meta && data.meta.fumsToken) tokens.push(data.meta.fumsToken);
+    if (data.data && data.data.passages) {
+      data.data.passages.forEach(p => { if (p.fumsToken) tokens.push(p.fumsToken); });
+    }
+    if (data.data && data.data.verses) {
+      data.data.verses.forEach(v => { if (v.fumsToken) tokens.push(v.fumsToken); });
+    }
+    if (tokens.length && typeof fums === 'function') {
+      fums('trackView', tokens.length === 1 ? tokens[0] : tokens);
+    }
+  } catch(e) { /* FUMS tracking failure is non-fatal */ }
+
   const passages = data.data && data.data.passages;
   const verses   = data.data && data.data.verses;
   if (passages && passages.length > 0) {
