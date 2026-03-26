@@ -1142,52 +1142,42 @@ function stripHtml(html) {
   if (!html) return '';
 
   let cleaned = html
-    // Remove heading/title elements entirely (e.g. "Effective Prayer")
-    .replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, '')
-    .replace(/<para[^>]*style="[^"]*ms[^"]*"[^>]*>.*?<\/para>/gi, '')
-    .replace(/<para[^>]*style="[^"]*s[1-9][^"]*"[^>]*>.*?<\/para>/gi, '')
-    // Remove footnotes, notes, note callers
-    .replace(/<note[^>]*>.*?<\/note>/gi, '')
-    .replace(/<span[^>]*class="[^"]*note[^"]*"[^>]*>.*?<\/span>/gi, '')
-    .replace(/<span[^>]*class="[^"]*verse-num[^"]*"[^>]*>.*?<\/span>/gi, '')
-    .replace(/<char[^>]*style="[^"]*nd[^"]*"[^>]*>.*?<\/char>/gi, '')
-    // Replace block-level tags with a space so words don't merge at boundaries
-    .replace(/<\/(p|div|para|li|td|th|br)>/gi, ' ')
-    .replace(/<(br|hr)[^>]*>/gi, ' ');
+    .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, ' ')
+    .replace(/<para[^>]*style="[^"]*(?:ms|mr|s|sr|r|d|sp|qa)[^"]*"[^>]*>[\s\S]*?<\/para>/gi, ' ')
+    .replace(/<div[^>]*class="[^"]*(?:s1|s2|ms|heading|title|section)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, ' ')
+    .replace(/<usx-para[^>]*style="[^"]*(?:ms|s)[^"]*"[^>]*>[\s\S]*?<\/usx-para>/gi, ' ')
+    .replace(/<note[^>]*>[\s\S]*?<\/note>/gi, '')
+    .replace(/<span[^>]*class="[^"]*(?:note|fn|xr|footnote)[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '')
+    .replace(/<char[^>]*style="[^"]*(?:nd|bk|tl|it|bd|sc)[^"]*"[^>]*>[\s\S]*?<\/char>/gi, '')
+    .replace(/<\/(p|div|para|li|td|th)>/gi, ' ')
+    .replace(/<(?:br|hr)[^>]*>/gi, ' ');
 
   const d = document.createElement('div');
   d.innerHTML = cleaned;
   let t = (d.textContent || d.innerText || '');
 
   return t
-    // ── Stray marker cleanup ──
-    .replace(/#[^#\s]*#/g, '')              // paired #token# markers e.g. #f1#
-    .replace(/\s*#\s*/g, ' ')              // lone # characters
-    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ') // [a] [1] footnote refs
-    .replace(/\s*\([a-z]\)\s*/gi, ' ')     // (a) footnote refs
-
-    // ── Fix space BEFORE comma/period/semicolon/colon (should never have one) ──
+    .replace(/#[^#\s]*#/g, '')
+    .replace(/\s*#\s*/g, ' ')
+    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ')
+    .replace(/\s*\([a-z]\)\s*/gi, ' ')
     .replace(/\s+([,\.;:!?])/g, '$1')
-
-    // ── Fix missing space AFTER comma/semicolon/colon ──
-    .replace(/,([^\s\d"'\u2019\u201d\)\]\}])/g, ', $1')
-    .replace(/;([^\s])/g, '; $1')
-    .replace(/:([A-Z\u201c"])/g, ': $1')
-
-    // ── Fix trailing punctuation artifacts ──
-    .replace(/[,;]\s*\.\s*$/g, '.')        // "word,." → "word."
-    .replace(/\.{2,}\s*$/g, '.')            // "word..." → "word."
-    .replace(/[,;]\s*$/g, '')               // trailing comma/semicolon
-
-    // ── Closing quote should hug preceding punctuation (no space before it) ──
-    .replace(/([.!?,;])\s+([\u2019\u201d"'])/g, '$1$2')
-
-    // ── Space between verse number and quote/letter ──
-    .replace(/(\d)(["'\u2018\u2019\u201c\u201d\u00ab\u00bb])/g, '$1 $2')
+    .replace(/(\w),(\w)/g, '$1, $2')
+    .replace(/;(\S)/g, '; $1')
+    .replace(/:([A-Z])/g, ': $1')
+    .replace(/\s+(\u2019)/g, '$1')
+    .replace(/\s+(\u201d)/g, '$1')
+    .replace(/([,\.;:!?])\s+(\u2019)/g, '$1$2')
+    .replace(/([,\.;:!?])\s+(\u201d)/g, '$1$2')
+    .replace(/[,;]\s*\.\s*$/g, '.')
+    .replace(/\.{2,}\s*$/g, '.')
+    .replace(/[,;]\s*$/g, '')
+    .replace(/(\d)(\u2018)/g, '$1 $2')
+    .replace(/(\d)(\u2019)/g, '$1 $2')
+    .replace(/(\d)(\u201c)/g, '$1 $2')
+    .replace(/(\d)(\u201d)/g, '$1 $2')
     .replace(/(\d)([A-Z])/g, '$1 $2')
     .replace(/(\d)([a-z])/g, '$1 $2')
-
-    // ── Collapse all whitespace ──
     .replace(/\s+/g, ' ')
     .trim();
 }
