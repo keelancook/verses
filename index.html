@@ -1142,16 +1142,11 @@ function stripHtml(html) {
   if (!html) return '';
 
   let cleaned = html
-    // Strip ALL heading-style elements regardless of tag type
-    // API.Bible uses p, para, div, span with class/style: s, s1, s2, ms, mr, r, d, sp, qa
     .replace(/<[^>]+(?:class|style)="[^"]*\b(?:s1|s2|s3|ms|mr|r|sr|d|sp|qa|heading|section|title)\b[^"]*"[^>]*>[\s\S]*?<\/[^>]+>/gi, ' ')
-    // Also strip standard h1-h6 tags
     .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, ' ')
-    // Strip footnotes and notes entirely
     .replace(/<note[^>]*>[\s\S]*?<\/note>/gi, '')
     .replace(/<span[^>]*class="[^"]*(?:note|fn|xr|footnote)[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '')
     .replace(/<char[^>]*style="[^"]*(?:nd|bk|tl|it|bd|sc)[^"]*"[^>]*>[\s\S]*?<\/char>/gi, '')
-    // Replace block closers with space to prevent word merging
     .replace(/<\/(p|div|para|li|td|th)>/gi, ' ')
     .replace(/<(?:br|hr)[^>]*>/gi, ' ');
 
@@ -1159,10 +1154,21 @@ function stripHtml(html) {
   d.innerHTML = cleaned;
   let t = (d.textContent || d.innerText || '');
 
-  // Post-process: remove any heading text that precedes the first verse number.
-  // Headings appear before digits in the text like "Effective Prayer 14This is..."
-  // Strip everything before the first standalone digit (verse number).
-  t = t.replace(/^[^0-9]*?(?=\d)/, '');
+  // Remove book/section range artifacts like "107-150)" at the start
+  t = t.replace(/^\s*\d+\s*[\u2013\u2014\-]\s*\d+\s*[\)\]]\s*/g, '');
+  t = t.replace(/^\s*\([^)]{1,30}\)\s*/g, '');
+
+  // Remove leading chapter number when it is clearly larger than the verse that follows
+  // e.g. "107 1 Give..." or "23 1 The Lord..." -> strip the chapter number
+  var chapMatch = t.match(/^\s*(\d{2,})\s+(\d{1,2})\s+[A-Z\u201c\u2018]/);
+  if (chapMatch && parseInt(chapMatch[1]) > parseInt(chapMatch[2])) {
+    t = t.replace(/^\s*\d+\s+/, '');
+  }
+
+  // Remove alphabetic heading text that precedes the first verse number
+  t = t.replace(/^.*?(?=\d{1,3}\s+[A-Z\u201c\u2018])/g, function(m) {
+    return /[A-Za-z]{2,}/.test(m) ? '' : m;
+  });
 
   return t
     .replace(/#[^#\s]*#/g, '')
