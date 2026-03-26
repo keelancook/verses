@@ -1031,12 +1031,20 @@ async function fetchFree(ref, trans) {
 
 function stripHtml(html) {
   if (!html) return '';
-  // Pre-clean raw HTML — remove footnote spans, note callers, special chars
+
   let cleaned = html
+    // Remove heading/title elements entirely (e.g. "Effective Prayer")
+    .replace(/<h[1-6][^>]*>.*?<\/h[1-6]>/gi, '')
+    .replace(/<para[^>]*style="[^"]*ms[^"]*"[^>]*>.*?<\/para>/gi, '')
+    .replace(/<para[^>]*style="[^"]*s[1-9][^"]*"[^>]*>.*?<\/para>/gi, '')
+    // Remove footnotes, notes, note callers
+    .replace(/<note[^>]*>.*?<\/note>/gi, '')
     .replace(/<span[^>]*class="[^"]*note[^"]*"[^>]*>.*?<\/span>/gi, '')
     .replace(/<span[^>]*class="[^"]*verse-num[^"]*"[^>]*>.*?<\/span>/gi, '')
     .replace(/<char[^>]*style="[^"]*nd[^"]*"[^>]*>.*?<\/char>/gi, '')
-    .replace(/<note[^>]*>.*?<\/note>/gi, '');
+    // Replace block-level tags with a space so words don't merge at boundaries
+    .replace(/<\/(p|div|para|li|td|th|br)>/gi, ' ')
+    .replace(/<(br|hr)[^>]*>/gi, ' ');
 
   const d = document.createElement('div');
   d.innerHTML = cleaned;
@@ -1044,23 +1052,25 @@ function stripHtml(html) {
 
   return t
     // ── Stray marker cleanup ──
-    .replace(/#[^#\s]*#/g, '')          // paired #token# markers e.g. #f1#
-    .replace(/\s*#\s*/g, ' ')          // lone # characters
-    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ')  // [a] [1] footnote refs
-    .replace(/\s*\([a-z]\)\s*/gi, ' ')      // (a) footnote refs
+    .replace(/#[^#\s]*#/g, '')              // paired #token# markers e.g. #f1#
+    .replace(/\s*#\s*/g, ' ')              // lone # characters
+    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ') // [a] [1] footnote refs
+    .replace(/\s*\([a-z]\)\s*/gi, ' ')     // (a) footnote refs
 
-    // ── Space after semicolons and colons with no following space ──
+    // ── Fix space BEFORE comma/period/semicolon/colon (should never have one) ──
+    .replace(/\s+([,\.;:!?])/g, '$1')
+
+    // ── Fix missing space AFTER comma/semicolon/colon ──
+    .replace(/,([^\s\d"'\u2019\u201d\)\]\}])/g, ', $1')
     .replace(/;([^\s])/g, '; $1')
-    .replace(/:([A-Z"\u201c])/g, ': $1')
+    .replace(/:([A-Z\u201c"])/g, ': $1')
 
-    // ── Remove extra punctuation artifacts ──
-    // Strip stray punctuation runs at end: e.g. trailing "," or ".," or ";."
-    .replace(/[,;]\s*\.\s*$/g, '.')
-    .replace(/\.{2,}\s*$/g, '.')       // multiple trailing dots → single
-    .replace(/[,;]\s*$/g, '')           // trailing comma or semicolon
+    // ── Fix trailing punctuation artifacts ──
+    .replace(/[,;]\s*\.\s*$/g, '.')        // "word,." → "word."
+    .replace(/\.{2,}\s*$/g, '.')            // "word..." → "word."
+    .replace(/[,;]\s*$/g, '')               // trailing comma/semicolon
 
-    // ── No space between punctuation and closing quote ──
-    // e.g. ". " → "." before a closing curly quote
+    // ── Closing quote should hug preceding punctuation (no space before it) ──
     .replace(/([.!?,;])\s+([\u2019\u201d"'])/g, '$1$2')
 
     // ── Space between verse number and quote/letter ──
@@ -1068,7 +1078,7 @@ function stripHtml(html) {
     .replace(/(\d)([A-Z])/g, '$1 $2')
     .replace(/(\d)([a-z])/g, '$1 $2')
 
-    // ── Collapse whitespace ──
+    // ── Collapse all whitespace ──
     .replace(/\s+/g, ' ')
     .trim();
 }
