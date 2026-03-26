@@ -1030,11 +1030,31 @@ async function fetchFree(ref, trans) {
 }
 
 function stripHtml(html) {
+  if (!html) return '';
+  // Pre-clean the raw HTML before DOM parsing:
+  // Remove API.Bible note caller spans and footnote markers like [1], (a), #f1#
+  let cleaned = html
+    .replace(/<span[^>]*class="[^"]*note[^"]*"[^>]*>.*?<\/span>/gi, '')
+    .replace(/<span[^>]*class="[^"]*verse-num[^"]*"[^>]*>.*?<\/span>/gi, '')
+    .replace(/<char[^>]*style="[^"]*nd[^"]*"[^>]*>.*?<\/char>/gi, '')
+    .replace(/<note[^>]*>.*?<\/note>/gi, '');
+
   const d = document.createElement('div');
-  d.innerHTML = html || '';
+  d.innerHTML = cleaned;
   return (d.textContent || d.innerText || '')
+    // Remove any stray # sequences (footnote markers, section markers)
+    .replace(/#[^#\s]*#/g, '')   // paired #token# markers
+    .replace(/\s*#\s*/g, ' ')   // lone # characters
+    // Remove stray footnote-style markers like [a] [1] (a)
+    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ')
+    .replace(/\s*\([a-z]\)\s*/gi, ' ')
+    // Add space between verse number and opening quote mark
+    .replace(/(\d)(["\u2018\u2019\u201c\u201d\'\u00ab\u00bb])/g, '$1 $2')
+    // Add space between verse number and capital letter
     .replace(/(\d)([A-Z])/g, '$1 $2')
+    // Add space between verse number and lowercase letter
     .replace(/(\d)([a-z])/g, '$1 $2')
+    // Collapse multiple spaces
     .replace(/\s+/g, ' ')
     .trim();
 }
