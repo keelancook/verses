@@ -136,6 +136,23 @@ input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gol
 .nav-btn { background: var(--ink); color: var(--parchment); border: none; border-radius: 3px; width: 46px; height: 46px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
 .nav-btn:hover { background: var(--ink-light); }
 .nav-btn:disabled { opacity: .2; cursor: default; }
+.nav-aux-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: transparent;
+  color: var(--ink-faint);
+  border: 1px solid var(--parchment-deeper);
+  border-radius: 3px;
+  padding: 5px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-aux-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.nav-aux-btn.active { color: var(--gold); border-color: var(--gold); background: rgba(184,148,58,.08); }
 .card-counter { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink-faint); letter-spacing: .08em; min-width: 70px; text-align: center; }
 
 /* ── QUIZ ── */
@@ -434,6 +451,24 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
         <div class="card-counter" id="card-counter">1 / 1</div>
         <button class="nav-btn" id="next-btn" onclick="navigate(1)">&#8594;</button>
       </div>
+      <div class="card-nav" style="gap:10px;margin-top:2px">
+        <button class="nav-aux-btn" onclick="resetDeck()" title="Reset to first card">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.5"></path>
+          </svg>
+          Reset
+        </button>
+        <button class="nav-aux-btn" id="shuffle-btn" onclick="shuffleDeck()" title="Shuffle cards">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 3 21 3 21 8"></polyline>
+            <line x1="4" y1="20" x2="21" y2="3"></line>
+            <polyline points="21 16 21 21 16 21"></polyline>
+            <line x1="15" y1="15" x2="21" y2="21"></line>
+          </svg>
+          Shuffle
+        </button>
+      </div>
     </div>
 
     <!-- QUIZ -->
@@ -652,6 +687,7 @@ let state = {
   quizOrder: [],
   quizIdx: 0,
   quizScore: { got: 0, close: 0, missed: 0 },
+  shuffled: false,
 };
 
 function save() {
@@ -757,7 +793,7 @@ function createDeck() {
   save(); renderSidebar(); selectDeck(deck.id); closeNewDeck(); closeSidebar();
 }
 function selectDeck(id) {
-  state.activeDeckId = id; state.cardIndex = 0; chipsOpen = false; save(); renderSidebar();
+  state.activeDeckId = id; state.cardIndex = 0; chipsOpen = false; state.shuffled = false; save(); renderSidebar();
   const deck = getDeck();
   if (!deck) return;
   setTopbarTitle(deck.name, deck.verses.length === 0
@@ -1016,6 +1052,7 @@ function renderCards() {
     document.getElementById('quiz-panel').style.display = 'none';
     return;
   }
+  syncShuffleBtn();
   if (state.mode === 'review') {
     document.getElementById('card-wrapper').style.display = 'flex';
     document.getElementById('quiz-panel').style.display = 'none';
@@ -1025,6 +1062,10 @@ function renderCards() {
     document.getElementById('quiz-panel').style.display = 'flex';
     startQuiz();
   }
+}
+function syncShuffleBtn() {
+  const btn = document.getElementById('shuffle-btn');
+  if (btn) btn.classList.toggle('active', !!state.shuffled);
 }
 function showCard() {
   const deck = getDeck(); if (!deck || !deck.verses.length) return;
@@ -1619,6 +1660,58 @@ function showChipsWrap(show) {
     document.getElementById('verse-chips').style.display = 'none';
     document.getElementById('chips-arrow').style.transform = '';
   }
+}
+
+
+// ─── RESET & SHUFFLE ───
+function resetDeck() {
+  state.cardIndex = 0;
+  // If deck is shuffled, restore original order
+  if (state.shuffled) {
+    state.shuffled = false;
+    const deck = getDeck();
+    if (deck) deck.verses = deck.originalOrder || deck.verses;
+    delete getDeck().originalOrder;
+    document.getElementById('shuffle-btn').classList.remove('active');
+    save();
+  }
+  showCard();
+  renderChips();
+  // Flash the card slightly to confirm reset
+  const card = document.getElementById('main-card');
+  card.classList.add('slide-in-right');
+  setTimeout(() => card.classList.remove('slide-in-right'), 260);
+}
+
+function shuffleDeck() {
+  const deck = getDeck();
+  if (!deck || deck.verses.length < 2) return;
+  const btn = document.getElementById('shuffle-btn');
+
+  if (state.shuffled) {
+    // Unshuffle — restore original order
+    state.shuffled = false;
+    deck.verses = deck.originalOrder || deck.verses;
+    delete deck.originalOrder;
+    btn.classList.remove('active');
+  } else {
+    // Shuffle — save original order first
+    deck.originalOrder = [...deck.verses];
+    // Fisher-Yates shuffle
+    const arr = [...deck.verses];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    deck.verses = arr;
+    state.shuffled = true;
+    btn.classList.add('active');
+  }
+
+  state.cardIndex = 0;
+  save();
+  showCard();
+  renderChips();
 }
 
 function esc(s) {
