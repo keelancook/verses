@@ -1142,19 +1142,27 @@ function stripHtml(html) {
   if (!html) return '';
 
   let cleaned = html
+    // Strip ALL heading-style elements regardless of tag type
+    // API.Bible uses p, para, div, span with class/style: s, s1, s2, ms, mr, r, d, sp, qa
+    .replace(/<[^>]+(?:class|style)="[^"]*\b(?:s1|s2|s3|ms|mr|r|sr|d|sp|qa|heading|section|title)\b[^"]*"[^>]*>[\s\S]*?<\/[^>]+>/gi, ' ')
+    // Also strip standard h1-h6 tags
     .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, ' ')
-    .replace(/<para[^>]*style="[^"]*(?:ms|mr|s|sr|r|d|sp|qa)[^"]*"[^>]*>[\s\S]*?<\/para>/gi, ' ')
-    .replace(/<div[^>]*class="[^"]*(?:s1|s2|ms|heading|title|section)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, ' ')
-    .replace(/<usx-para[^>]*style="[^"]*(?:ms|s)[^"]*"[^>]*>[\s\S]*?<\/usx-para>/gi, ' ')
+    // Strip footnotes and notes entirely
     .replace(/<note[^>]*>[\s\S]*?<\/note>/gi, '')
     .replace(/<span[^>]*class="[^"]*(?:note|fn|xr|footnote)[^"]*"[^>]*>[\s\S]*?<\/span>/gi, '')
     .replace(/<char[^>]*style="[^"]*(?:nd|bk|tl|it|bd|sc)[^"]*"[^>]*>[\s\S]*?<\/char>/gi, '')
+    // Replace block closers with space to prevent word merging
     .replace(/<\/(p|div|para|li|td|th)>/gi, ' ')
     .replace(/<(?:br|hr)[^>]*>/gi, ' ');
 
   const d = document.createElement('div');
   d.innerHTML = cleaned;
   let t = (d.textContent || d.innerText || '');
+
+  // Post-process: remove any heading text that precedes the first verse number.
+  // Headings appear before digits in the text like "Effective Prayer 14This is..."
+  // Strip everything before the first standalone digit (verse number).
+  t = t.replace(/^[^0-9]*?(?=\d)/, '');
 
   return t
     .replace(/#[^#\s]*#/g, '')
