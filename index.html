@@ -1031,8 +1031,7 @@ async function fetchFree(ref, trans) {
 
 function stripHtml(html) {
   if (!html) return '';
-  // Pre-clean the raw HTML before DOM parsing:
-  // Remove API.Bible note caller spans and footnote markers like [1], (a), #f1#
+  // Pre-clean raw HTML — remove footnote spans, note callers, special chars
   let cleaned = html
     .replace(/<span[^>]*class="[^"]*note[^"]*"[^>]*>.*?<\/span>/gi, '')
     .replace(/<span[^>]*class="[^"]*verse-num[^"]*"[^>]*>.*?<\/span>/gi, '')
@@ -1041,20 +1040,35 @@ function stripHtml(html) {
 
   const d = document.createElement('div');
   d.innerHTML = cleaned;
-  return (d.textContent || d.innerText || '')
-    // Remove any stray # sequences (footnote markers, section markers)
-    .replace(/#[^#\s]*#/g, '')   // paired #token# markers
-    .replace(/\s*#\s*/g, ' ')   // lone # characters
-    // Remove stray footnote-style markers like [a] [1] (a)
-    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ')
-    .replace(/\s*\([a-z]\)\s*/gi, ' ')
-    // Add space between verse number and opening quote mark
-    .replace(/(\d)(["\u2018\u2019\u201c\u201d\'\u00ab\u00bb])/g, '$1 $2')
-    // Add space between verse number and capital letter
+  let t = (d.textContent || d.innerText || '');
+
+  return t
+    // ── Stray marker cleanup ──
+    .replace(/#[^#\s]*#/g, '')          // paired #token# markers e.g. #f1#
+    .replace(/\s*#\s*/g, ' ')          // lone # characters
+    .replace(/\s*\[[a-z0-9]+\]\s*/gi, ' ')  // [a] [1] footnote refs
+    .replace(/\s*\([a-z]\)\s*/gi, ' ')      // (a) footnote refs
+
+    // ── Space after semicolons and colons with no following space ──
+    .replace(/;([^\s])/g, '; $1')
+    .replace(/:([A-Z"\u201c])/g, ': $1')
+
+    // ── Remove extra punctuation artifacts ──
+    // Strip stray punctuation runs at end: e.g. trailing "," or ".," or ";."
+    .replace(/[,;]\s*\.\s*$/g, '.')
+    .replace(/\.{2,}\s*$/g, '.')       // multiple trailing dots → single
+    .replace(/[,;]\s*$/g, '')           // trailing comma or semicolon
+
+    // ── No space between punctuation and closing quote ──
+    // e.g. ". " → "." before a closing curly quote
+    .replace(/([.!?,;])\s+([\u2019\u201d"'])/g, '$1$2')
+
+    // ── Space between verse number and quote/letter ──
+    .replace(/(\d)(["'\u2018\u2019\u201c\u201d\u00ab\u00bb])/g, '$1 $2')
     .replace(/(\d)([A-Z])/g, '$1 $2')
-    // Add space between verse number and lowercase letter
     .replace(/(\d)([a-z])/g, '$1 $2')
-    // Collapse multiple spaces
+
+    // ── Collapse whitespace ──
     .replace(/\s+/g, ' ')
     .trim();
 }
