@@ -1888,7 +1888,6 @@ function renderEditTags() {
 
 // ── TAG FILTER ──
 function renderTagFilter() {
-  // Collect all unique tags across all decks
   const allTags = [...new Set(state.decks.flatMap(d => d.tags || []))].sort();
   const row = document.getElementById('tag-filter-row');
   row.innerHTML = '';
@@ -1897,14 +1896,18 @@ function renderTagFilter() {
     return;
   }
   row.style.display = 'flex';
+  // All button
+  const allBtn = document.createElement('button');
+  allBtn.className = 'tag-filter-btn' + (!state.activeTagFilter ? ' active' : '');
+  allBtn.textContent = 'All';
+  allBtn.onclick = () => { state.activeTagFilter = null; renderSidebar(); };
+  row.appendChild(allBtn);
+  // Tag buttons
   allTags.forEach(tag => {
     const btn = document.createElement('button');
     btn.className = 'tag-filter-btn' + (state.activeTagFilter === tag ? ' active' : '');
     btn.textContent = tag;
-    btn.onclick = () => {
-      state.activeTagFilter = state.activeTagFilter === tag ? null : tag;
-      renderSidebar();
-    };
+    btn.onclick = () => { state.activeTagFilter = tag; renderSidebar(); };
     row.appendChild(btn);
   });
 }
