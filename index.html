@@ -1745,6 +1745,8 @@ function updateChipsLabel() {
 function showChipsWrap(show) {
   const wrap = document.getElementById('verse-chips-wrap');
   if (wrap) wrap.style.display = show ? 'block' : 'none';
+  const toggle = document.getElementById('chips-toggle');
+  if (toggle) toggle.style.display = show ? 'flex' : 'none';
   if (!show) {
     chipsOpen = false;
     const chips = document.getElementById('verse-chips');
