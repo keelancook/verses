@@ -23,7 +23,7 @@
   --card-shadow: 0 20px 60px rgba(26,21,16,.18), 0 4px 16px rgba(26,21,16,.1);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
+html, body { height: 100%; min-height: -webkit-fill-available; }
 body {
   font-family: 'Crimson Pro', serif;
   background: var(--parchment);
@@ -41,6 +41,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   position: relative;
   transition: transform 0.3s ease;
   z-index: 50;
@@ -78,10 +79,10 @@ body {
 #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 49; }
 
 /* ── MAIN ── */
-#main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; min-width: 0; background: var(--parchment); background-image: radial-gradient(ellipse at 80% 10%, rgba(184,148,58,.05) 0%, transparent 60%), radial-gradient(ellipse at 10% 90%, rgba(74,94,70,.04) 0%, transparent 50%); }
+#main { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; min-width: 0; background: var(--parchment); background-image: radial-gradient(ellipse at 80% 10%, rgba(184,148,58,.05) 0%, transparent 60%), radial-gradient(ellipse at 10% 90%, rgba(74,94,70,.04) 0%, transparent 50%); }
 
 /* ── TOPBAR ── */
-#topbar { height: 64px; padding: 0 28px; border-bottom: 1px solid var(--parchment-deeper); display: flex; align-items: center; gap: 12px; background: rgba(245,240,232,.95); backdrop-filter: blur(4px); flex-shrink: 0; }
+#topbar { height: 64px; padding: 0 28px; border-bottom: 1px solid var(--parchment-deeper); display: flex; align-items: center; gap: 12px; background: rgba(245,240,232,.95); backdrop-filter: blur(4px); flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
 #menu-toggle { display: none; background: none; border: none; color: var(--ink-faint); font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
 .topbar-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-title span { font-style: italic; color: var(--ink-faint); font-weight: 400; font-size: 13px; display: block; font-family: 'Crimson Pro', serif; margin-top: 1px; }
@@ -92,7 +93,7 @@ body {
 .mode-tab:hover:not(.active) { background: var(--parchment-dark); }
 
 /* ── ADD FORM ── */
-#add-form { padding: 10px 28px; background: var(--parchment-dark); border-bottom: 1px solid var(--parchment-deeper); display: none; gap: 8px; align-items: flex-end; flex-wrap: wrap; flex-shrink: 0; }
+#add-form { padding: 10px 28px; background: var(--parchment-dark); border-bottom: 1px solid var(--parchment-deeper); display: none; gap: 8px; align-items: flex-end; flex-wrap: wrap; flex-shrink: 0; position: sticky; top: 64px; z-index: 9; }
 .form-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px; }
 .form-group { display: flex; flex-direction: column; }
 input[type="text"], select, textarea { font-family: 'Crimson Pro', serif; font-size: 15px; color: var(--ink); background: var(--parchment); border: 1px solid var(--parchment-deeper); border-radius: 3px; padding: 0 11px; height: 37px; outline: none; transition: border-color .2s, box-shadow .2s; }
@@ -119,7 +120,7 @@ input[type="text"]:focus, select:focus, textarea:focus { border-color: var(--gol
 .verse-chip-del { color: var(--crimson); font-size: 13px; line-height: 1; margin-left: 1px; }
 
 /* ── CARD AREA ── */
-#card-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 28px 28px; overflow-y: auto; overflow-x: hidden; }
+#card-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 28px 28px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
 #empty-state, #no-deck-state { text-align: center; max-width: 380px; padding: 20px; }
 .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: .3; }
 .empty-title { font-family: 'Playfair Display', serif; font-size: 22px; font-style: italic; color: var(--ink-faint); margin-bottom: 8px; }
@@ -273,6 +274,10 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   pointer-events: none;
 }
 @media (max-width: 700px) {
+  body { height: 100svh; overflow: hidden; }
+  #main { overflow-y: auto; overflow-x: hidden; height: auto; min-height: 100%; }
+  #card-area { padding: 16px 16px 40px; min-height: auto; justify-content: flex-start; }
+  #card-wrapper, #quiz-panel { width: 100%; }
   #focus-card { padding: 36px 28px; min-height: 220px; }
   .focus-verse { font-size: 18px; }
 }
@@ -375,12 +380,12 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
 
 /* ── RESPONSIVE ── */
 @media (max-width: 700px) {
-  #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); width: 82vw; max-width: 300px; min-width: unset; }
+  #sidebar { position: fixed; top: 0; left: 0; bottom: 0; height: 100%; height: 100dvh; transform: translateX(-100%); width: 82vw; max-width: 300px; min-width: unset; }
   #sidebar.open { transform: translateX(0); }
   #sidebar-close { display: block; }
   #sidebar-overlay.open { display: block; }
   #menu-toggle { display: block; }
-  #topbar { padding: 0 16px; }
+  #topbar { padding: 0 16px; position: sticky; top: 0; }
   .topbar-title { font-size: 15px; }
   .topbar-title span { font-size: 11px; }
   .mode-tab { padding: 6px 10px; }
