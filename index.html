@@ -82,7 +82,7 @@ body {
 #main { flex: 1; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; min-width: 0; background: var(--parchment); background-image: radial-gradient(ellipse at 80% 10%, rgba(184,148,58,.05) 0%, transparent 60%), radial-gradient(ellipse at 10% 90%, rgba(74,94,70,.04) 0%, transparent 50%); }
 
 /* ── TOPBAR ── */
-#topbar { height: 64px; padding: 0 28px; border-bottom: 1px solid var(--parchment-deeper); display: flex; align-items: center; gap: 12px; background: rgba(245,240,232,.95); backdrop-filter: blur(4px); flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
+#topbar { min-height: 56px; padding: 0 16px 0 28px; border-bottom: 1px solid var(--parchment-deeper); display: flex; align-items: center; gap: 10px; background: rgba(245,240,232,.95); backdrop-filter: blur(4px); flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
 #menu-toggle { display: none; background: none; border: none; color: var(--ink-faint); font-size: 22px; cursor: pointer; padding: 4px; flex-shrink: 0; }
 .topbar-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-title span { font-style: italic; color: var(--ink-faint); font-weight: 400; font-size: 13px; display: block; font-family: 'Crimson Pro', serif; margin-top: 1px; }
@@ -93,7 +93,11 @@ body {
 .mode-tab:hover:not(.active) { background: var(--parchment-dark); }
 
 /* ── ADD FORM ── */
-#add-form { padding: 10px 28px; background: var(--parchment-dark); border-bottom: 1px solid var(--parchment-deeper); display: none; gap: 8px; align-items: flex-end; flex-wrap: wrap; flex-shrink: 0; position: sticky; top: 64px; z-index: 9; }
+#add-form-wrap { flex-shrink: 0; position: sticky; top: 56px; z-index: 9; }
+#add-form-toggle { width: 100%; background: var(--parchment-dark); border: none; border-bottom: 1px solid var(--parchment-deeper); padding: 8px 28px; display: none; align-items: center; justify-content: space-between; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); transition: color .15s; }
+#add-form-toggle:hover { color: var(--ink); }
+#add-form-toggle-arrow { font-size: 10px; transition: transform .2s; }
+#add-form { padding: 10px 28px; background: var(--parchment-dark); border-bottom: 1px solid var(--parchment-deeper); display: none; gap: 8px; align-items: flex-end; flex-wrap: wrap; flex-shrink: 0; }
 .form-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 4px; }
 .form-group { display: flex; flex-direction: column; }
 input[type="text"], select, textarea { font-family: 'Crimson Pro', serif; font-size: 15px; color: var(--ink); background: var(--parchment); border: 1px solid var(--parchment-deeper); border-radius: 3px; padding: 0 11px; height: 37px; outline: none; transition: border-color .2s, box-shadow .2s; }
@@ -385,7 +389,12 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
   #sidebar-close { display: block; }
   #sidebar-overlay.open { display: block; }
   #menu-toggle { display: block; }
-  #topbar { padding: 0 16px; position: sticky; top: 0; }
+  #topbar { padding: 0 12px; position: sticky; top: 0; min-height: 52px; }
+  .topbar-title { font-size: 14px; }
+  .topbar-title span { font-size: 11px; }
+  #add-form-wrap { position: sticky; top: 52px; z-index: 9; }
+  #add-form-toggle { padding: 8px 16px; }
+  #add-form { padding: 10px 16px; }
   .topbar-title { font-size: 15px; }
   .topbar-title span { font-size: 11px; }
   .mode-tab { padding: 6px 10px; }
@@ -448,29 +457,35 @@ textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.6; ma
     </div>
   </div>
 
-  <div id="add-form">
-    <div class="form-group">
-      <span class="form-label">Reference</span>
-      <input type="text" id="ref-input" placeholder="e.g. John 3:16" onkeydown="if(event.key==='Enter')addVerse()">
-    </div>
-    <div class="form-group">
-      <span class="form-label">Translation</span>
-      <select id="trans-select"></select>
-    </div>
-    <div class="form-group">
-      <span class="form-label">&nbsp;</span>
-      <div style="display:flex;gap:8px">
-        <button class="btn-icon" id="add-btn" onclick="addVerse()" title="Add verse">&#43;</button>
-        <button class="btn-icon btn-icon-import" onclick="openImport()" title="Import from Markdown file">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-        </button>
+  <div id="add-form-wrap">
+    <button id="add-form-toggle" onclick="toggleAddForm()">
+      <span>Add Verse</span>
+      <span id="add-form-toggle-arrow">&#9654;</span>
+    </button>
+    <div id="add-form">
+      <div class="form-group">
+        <span class="form-label">Reference</span>
+        <input type="text" id="ref-input" placeholder="e.g. John 3:16" onkeydown="if(event.key==='Enter')addVerse()">
       </div>
+      <div class="form-group">
+        <span class="form-label">Translation</span>
+        <select id="trans-select"></select>
+      </div>
+      <div class="form-group">
+        <span class="form-label">&nbsp;</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn-icon" id="add-btn" onclick="addVerse()" title="Add verse">&#43;</button>
+          <button class="btn-icon btn-icon-import" onclick="openImport()" title="Import from Markdown file">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <span id="fetch-status"></span>
     </div>
-    <span id="fetch-status"></span>
   </div>
 
   <div id="verse-chips-wrap" style="flex-shrink:0;display:none">
@@ -872,6 +887,8 @@ function showNoDeck() {
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('card-wrapper').style.display = 'none';
   document.getElementById('quiz-panel').style.display = 'none';
+  showAddFormToggle(false);
+  document.getElementById('mode-tabs').style.display = 'none';
 }
 
 function openSidebar() {
@@ -926,29 +943,21 @@ function createDeck() {
   save(); renderSidebar(); selectDeck(deck.id); closeNewDeck(); closeSidebar();
 }
 function selectDeck(id) {
-  state.activeDeckId = id; state.cardIndex = 0; chipsOpen = false; state.shuffled = false; save(); renderSidebar();
+  state.activeDeckId = id; state.cardIndex = 0; chipsOpen = false; addFormOpen = false; state.shuffled = false; save(); renderSidebar();
   const deck = getDeck();
   if (!deck) return;
   setTopbarTitle(deck.name, deck.verses.length === 0
     ? 'Add your first verse below'
     : `${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}`);
-  document.getElementById('add-form').style.display = 'flex';
+  showAddFormToggle(true);
   document.getElementById('mode-tabs').style.display = 'flex';
   document.getElementById('focus-btn').style.display = deck.verses.length > 0 ? 'block' : 'none';
   document.getElementById('no-deck-state').style.display = 'none';
   renderCards(); renderChips();
 }
 function setTopbarTitle(name, sub) {
-  const deck = getDeck();
-  const tagHtml = deck && (deck.tags || []).length
-    ? (deck.tags || []).map(t => `<span class="topbar-tag">${esc(t)}</span>`).join(' ')
-    : '';
   document.getElementById('deck-title-display').innerHTML =
-    `<span style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0">` +
-    `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name)}</span>` +
-    (tagHtml ? `<span style="display:flex;gap:4px;flex-wrap:wrap">${tagHtml}</span>` : '') +
-    `</span>` +
-    `<span id="deck-sub">${esc(sub)}</span>`;
+    esc(name) + `<span id="deck-sub">${esc(sub)}</span>`;
 }
 function getDeck(id) { return state.decks.find(d => d.id === (id || state.activeDeckId)); }
 function renderSidebar() {
@@ -2082,6 +2091,28 @@ function saveEditCard() {
   showCard();
   renderChips();
   closeEditCard();
+}
+
+
+// ─── ADD FORM TOGGLE ───
+let addFormOpen = false;
+
+function toggleAddForm() {
+  addFormOpen = !addFormOpen;
+  document.getElementById('add-form').style.display = addFormOpen ? 'flex' : 'none';
+  document.getElementById('add-form-toggle-arrow').style.transform = addFormOpen ? 'rotate(90deg)' : '';
+}
+
+function showAddFormToggle(show) {
+  const toggle = document.getElementById('add-form-toggle');
+  if (toggle) toggle.style.display = show ? 'flex' : 'none';
+  if (!show) {
+    addFormOpen = false;
+    const form = document.getElementById('add-form');
+    if (form) form.style.display = 'none';
+    const arrow = document.getElementById('add-form-toggle-arrow');
+    if (arrow) arrow.style.transform = '';
+  }
 }
 
 function esc(s) {
