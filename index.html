@@ -294,7 +294,15 @@ textarea { width:100%; min-height:90px; resize:vertical; line-height:1.6; margin
   </div>
   <div class="sidebar-actions">
     <button class="btn-new-deck" onclick="openNewDeck()">+ New Deck</button>
-    <button class="btn-settings" onclick="openSettings()">&#9881; Settings</button>
+    <div style="display:flex;gap:6px;margin-top:7px">
+      <button class="btn-settings" style="flex:1;text-align:left" onclick="openImportDeck()">&#8659; Import Deck</button>
+      <button class="btn-settings" style="padding:9px 12px" onclick="openSettings()" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
   </div>
   <div id="tag-filter-row"></div>
   <div class="decks-label">Your Decks</div>
@@ -542,6 +550,25 @@ textarea { width:100%; min-height:90px; resize:vertical; line-height:1.6; margin
     <div class="modal-actions">
       <button class="btn-primary" onclick="saveEditDeck()">Save</button>
       <button class="btn-secondary" onclick="closeEditDeck()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT DECK MODAL -->
+<div class="overlay" id="importdeck-overlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">Import Deck</div>
+    <div class="modal-sub">Open a deck file shared by another user to add it to your library.</div>
+    <div class="import-dropzone" onclick="document.getElementById('importdeck-file').click()">
+      <input type="file" id="importdeck-file" accept=".json" style="display:none" onchange="handleImportDeckFile(event)">
+      <div class="import-drop-icon">&#8659;</div>
+      <div class="import-drop-label">Choose a deck file</div>
+      <div class="import-drop-hint">.json &mdash; exported from Scripture Memory</div>
+    </div>
+    <div id="importdeck-preview" style="display:none;margin-top:14px"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="runImportDeck()" id="importdeck-btn">Import</button>
+      <button class="btn-secondary" onclick="closeImportDeck()">Cancel</button>
     </div>
   </div>
 </div>
@@ -823,18 +850,30 @@ function renderSidebar() {
     const tagHtml = (deck.tags || []).map(t =>
       `<span class="deck-tag">${esc(t)}</span>`
     ).join('');
-    const iconStyle = 'background:none;border:none;color:#5a4a3a;cursor:pointer;padding:2px 3px;flex-shrink:0;opacity:0.45;transition:all .15s;line-height:1;display:flex;align-items:center';
+    const iconStyle = 'background:none;border:none;color:var(--parchment);cursor:pointer;padding:2px 3px;flex-shrink:0;opacity:0.35;transition:all .15s;line-height:1;display:flex;align-items:center';
     el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px">
         <div style="min-width:0;flex:1">
           <div class="deck-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(deck.name)}</div>
-          <div class="deck-meta">${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}${tagHtml ? '' : ''}</div>
+          <div class="deck-meta">${deck.verses.length} verse${deck.verses.length !== 1 ? 's' : ''}</div>
           ${tagHtml ? `<div class="deck-tags">${tagHtml}</div>` : ''}
         </div>
         <div style="display:flex;gap:2px;flex-shrink:0">
+          <button onclick="event.stopPropagation();exportDeck('${esc(deck.id)}')" title="Export deck"
+            style="${iconStyle}"
+            onmouseover="this.style.opacity='1';this.style.color='var(--gold)'"
+            onmouseout="this.style.opacity='0.35';this.style.color='var(--parchment)'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </button>
           <button onclick="event.stopPropagation();openEditDeck('${esc(deck.id)}')" title="Edit deck"
             style="${iconStyle}"
             onmouseover="this.style.opacity='1';this.style.color='var(--gold)'"
-            onmouseout="this.style.opacity='0.45';this.style.color='#5a4a3a'">
+            onmouseout="this.style.opacity='0.35';this.style.color='var(--parchment)'">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -842,8 +881,8 @@ function renderSidebar() {
           </button>
           <button onclick="event.stopPropagation();deleteDeck('${esc(deck.id)}')" title="Delete deck"
             style="${iconStyle}"
-            onmouseover="this.style.opacity='1';this.style.color='#a83232'"
-            onmouseout="this.style.opacity='0.45';this.style.color='#5a4a3a'">
+            onmouseover="this.style.opacity='1';this.style.color='#e07070'"
+            onmouseout="this.style.opacity='0.35';this.style.color='var(--parchment)'">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
@@ -1337,10 +1376,10 @@ async function saveApiBibleKey() {
 }
 
 // Close modals on overlay click
-['settings-overlay', 'newdeck-overlay', 'import-overlay', 'restore-overlay', 'editdeck-overlay', 'editcard-overlay'].forEach(id => {
+['settings-overlay', 'newdeck-overlay', 'import-overlay', 'restore-overlay', 'editdeck-overlay', 'editcard-overlay', 'importdeck-overlay'].forEach(id => {
   document.getElementById(id).addEventListener('click', e => {
     if (e.target === document.getElementById(id)) {
-      id === 'settings-overlay' ? closeSettings() : id === 'import-overlay' ? closeImport() : id === 'restore-overlay' ? closeRestoreBackup() : id === 'editdeck-overlay' ? closeEditDeck() : id === 'editcard-overlay' ? closeEditCard() : closeNewDeck();
+      id === 'settings-overlay' ? closeSettings() : id === 'import-overlay' ? closeImport() : id === 'restore-overlay' ? closeRestoreBackup() : id === 'editdeck-overlay' ? closeEditDeck() : id === 'editcard-overlay' ? closeEditCard() : id === 'importdeck-overlay' ? closeImportDeck() : closeNewDeck();
     }
   });
 });
@@ -1969,6 +2008,90 @@ function showAddFormToggle(show) {
     const arrow = document.getElementById('add-form-toggle-arrow');
     if (arrow) arrow.style.transform = '';
   }
+}
+
+
+// ═══════════════════════════════════════
+// DECK EXPORT / IMPORT
+// ═══════════════════════════════════════
+function exportDeck(id) {
+  const deck = state.decks.find(d => d.id === id);
+  if (!deck) return;
+  const payload = {
+    _type: 'scripture-memory-deck',
+    _version: 1,
+    name: deck.name,
+    tags: deck.tags || [],
+    verses: deck.verses.map(v => ({ ref: v.ref, text: v.text, translation: v.translation }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const slug = deck.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  a.href = url;
+  a.download = `deck-${slug}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function openImportDeck() {
+  document.getElementById('importdeck-overlay').classList.add('open');
+}
+
+function closeImportDeck() {
+  document.getElementById('importdeck-overlay').classList.remove('open');
+  document.getElementById('importdeck-file').value = '';
+  document.getElementById('importdeck-preview').style.display = 'none';
+  document.getElementById('importdeck-preview').innerHTML = '';
+  importDeckData = null;
+}
+
+let importDeckData = null;
+
+function handleImportDeckFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data._type !== 'scripture-memory-deck') throw new Error('Not a deck file');
+      importDeckData = data;
+      const preview = document.getElementById('importdeck-preview');
+      preview.style.display = 'block';
+      preview.innerHTML = `
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px">Ready to import</div>
+        <div style="border:1px solid var(--parchment-deeper);border-radius:3px;padding:14px 16px;background:var(--parchment)">
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:600">${esc(data.name)}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-faint);margin-top:4px">${data.verses.length} verse${data.verses.length !== 1 ? 's' : ''}${data.tags && data.tags.length ? ' &middot; ' + data.tags.map(t => esc(t)).join(', ') : ''}</div>
+        </div>`;
+    } catch(err) {
+      importDeckData = null;
+      const preview = document.getElementById('importdeck-preview');
+      preview.style.display = 'block';
+      preview.innerHTML = `<div style="color:var(--crimson);font-family:'DM Mono',monospace;font-size:10px">Invalid deck file. Please use a file exported from this app.</div>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function runImportDeck() {
+  if (!importDeckData) return;
+  const existing = state.decks.find(d => d.name === importDeckData.name);
+  const newDeck = {
+    id: Date.now().toString(),
+    name: importDeckData.name,
+    tags: importDeckData.tags || [],
+    verses: importDeckData.verses.map(v => ({ ref: v.ref, text: v.text, translation: v.translation || 'CSB' })),
+    originalOrder: null
+  };
+  if (existing) newDeck.name = importDeckData.name + ' (imported)';
+  state.decks.push(newDeck);
+  save();
+  renderSidebar();
+  selectDeck(newDeck.id);
+  closeImportDeck();
+  closeSidebar();
 }
 
 function esc(s) {
